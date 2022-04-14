@@ -1,0 +1,118 @@
+---
+title: "tidyverse"
+author: "Merrisa Lin"
+date: "2/22/2022"
+output: html_document
+---
+
+# Data Sources
+The data file "Personality TED Talk" was retrieved from 11 TED Talks relating to personality. The title of the talk, speaker of the talk, views of the talk and the abstract of the talk are included in the data file.
+Retrieved from https://www.ted.com/talks?sort=relevance&q=personality.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Clean the workspace
+```{r clear-workspace}
+#clear the workspace
+rm(list=ls())
+```
+
+# Install and load the package
+```{r tidyverse}
+install.packages("tidyverse",
+repo="http://cloud.r-project.org/")
+library(tidyverse)
+```
+
+# Pull up the data file
+```{r readr}
+library(readxl)
+Datafile <- read_excel ("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/Data File/Personality TED Talk.xlsx")
+#use your data file path here
+head(Datafile)
+
+#library(readr)
+  #read_csv(): comma-separated values (CSV) files
+  #read_tsv(): tab-separated values (TSV) files
+  #read_delim(): delimited files (CSV and TSV are important special cases)
+  #read_fwf(): fixed-width files
+  #read_table(): whitespace-separated files
+  #read_log(): web log files
+#library(readxl)
+  #read_excel: xlsx, xls files
+#library(haven)
+  #read_sas(): SAS files
+  #read_sav(): SPSS files
+  #read_dta(): Stata files
+```
+# Data cleaning
+```{r tibble}
+library(tibble)
+as_tibble(Datafile)
+class(Datafile) #classify what type of data file it is
+```
+
+# Data cleaning
+```{r tidyr}
+library(tidyr)
+Datafile_Tidy <- drop_na(Datafile, Speaker) #can also specify the column, e.g., drop_na(Datafile, Speaker)
+head(Datafile_Tidy)
+
+#pivot_longer() and pivot_wider(): converts between long and wide forms.
+#unnest_longer(), unnest_wider(), hoist(): turns nested lists into tidy tibbles.
+#nest(), unnest(): nesting creates a list-column of data frames; unnesting flattens it back out into regular columns.
+#separate() and extract(): to pull a single character column into multiple columns.
+#unite(): to combine multiple columns into a single character column.
+#complete(): Make implicit missing values explicit.
+#drop_na(): drops rows containing a missing value.
+#fill(): replace missing values with next/previous value.
+#replace_na(): replace NAs with specified values.
+```
+
+# Data manipulation
+```{r dplyr}
+library(dplyr)
+Datafile_Tidy_Speaker <- 
+  Datafile_Tidy %>%
+  select(c("Title", "Speaker"))
+head(Datafile_Tidy_Speaker)
+
+#mutate(): adds new variables that are functions of existing variables
+#select(): picks variables based on their names.
+#filter(): picks cases based on their values.
+#summarise(): reduces multiple values down to a single summary.
+#arrange(): changes the ordering of the rows.
+#group_by(): perform any operation by group.
+```
+
+# Data structure
+```{r stringr}
+library(tidyverse)
+str_length(Datafile$Abstract) #character count of each response
+
+#str_c(): combine character vectors
+#str_sub(): extract substring
+#str_detect(x, pattern): tells you if there’s any match to the pattern.
+#str_count(x, pattern) counts the number of patterns.
+#str_subset(x, pattern) extracts the matching components.
+#str_locate(x, pattern) gives the position of the match.
+#str_extract(x, pattern) extracts the text of the match.
+#str_match(x, pattern) extracts parts of the match defined by parentheses.
+#str_replace(x, pattern, replacement) replaces the matches with new text.
+#str_split(x, pattern) splits up a string into multiple pieces.
+```
+
+# Data visualization
+```{r ggplot2}
+library(ggplot2)
+Views <- Datafile$Views
+AbstractLength <- str_length(Datafile$Abstract)
+PersosnalityTEDTalk <- data.frame(Views,AbstractLength)
+ggplot(PersosnalityTEDTalk, aes(Views,AbstractLength, colour = 'red')) + geom_point()
+
+#geom_errorbar(): for error bars
+#geom_line(): for connecting lines
+#geom_histogram(): for plotting histogram
+```

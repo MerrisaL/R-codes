@@ -1,0 +1,117 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+get---
+title: "lm and lme4"
+author: "Hayes Brenner"
+date: "3/10/2022"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# This exercise will demonstrate how to run linear regression and mixed-effect modeling in R. The dataset used in this exercise come from Scribbr. Additional information came from chapter 2 of Multilevel analysis: Techniques and applications (2nd ed.) by J.J. Hox (2010).
+
+# First, let's do the normal setup stuff...
+```{r clear workspace}
+
+# clear the workspace
+rm(list=ls())
+set.seed(5)
+```
+
+
+```{r function-check-for-packages, include=FALSE}
+
+# make sure we can load packages 
+# (thanks to https://gist.github.com/smithdanielle/9913897)
+load_or_install_packages <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) {
+    install.packages(new.pkg, 
+                     dependencies = TRUE,
+                     repos="http://cloud.r-project.org/")}
+  sapply(pkg, require, character.only = TRUE)
+}
+
+```
+
+
+```{r load-packages, message=FALSE, results="hide"}
+# specify which packages we'll need
+required_packages = c("tidyverse",
+                      "stringr",
+                      "ggplot2",
+                      "lmerTest",
+                      "tm", 
+                      "lme4")
+
+# install them (if necessary) and load them
+load_or_install_packages(required_packages)
+```
+
+# Load the data for linear regression. This is data on income levels and corresponding happiness for multiple subjects. Be sure to change file location depending on where you have the data downloaded
+
+```{r load-data}
+incomedata <- read.csv("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/income.data.csv")
+incomedata
+
+```
+
+# Let's get a visual look at this data to see if it looks linear
+
+```{r income plot}
+plot(happiness ~ income, data = incomedata) # y ~ x
+```
+
+# This seems pretty linear, so let's do a linear regression on the data. Does there seem to be a significant relationship? How much of the data is explained? Discuss!
+
+```{r linear regression}
+IncomeHappinessModel=lm(happiness ~ income, data = incomedata)
+summary(IncomeHappinessModel)
+```
+# OK, let's plot this and see what kind of regression we got. We can use geom_smooth() and type "lm" as method which will give us a regression line and error.
+
+```{r linear regression line}
+IncomeGraph=ggplot(incomedata, aes(x=income, y=happiness))+
+                     geom_point()
+IncomeGraph=IncomeGraph+geom_smooth(method="lm",color="Black")
+IncomeGraph
+```
+
+
+# Let's assume we get some data from people taking a language ability test with an average score of 100 and a max score of 200. In this case, we have 4 populations, and each population will have a different distribution (let's say this reflects geographical locations). The conditions that distinguish the populations will be called factors, and will be labeled as such. The order of values for the rnorm funciton is # of people, average, and std. dev. We'll use that funciton to generate some random data clusters. 
+
+```{r Create Mixed Model Data}
+Class_data=data.frame(
+  Scores=c(rnorm(50,100,20),rnorm(50,80,20),rnorm(50,120,20),rnorm(50,90,30)),
+  Population1=c(rep(-1,100),rep(1,100)),
+  Population2=rep(c(rep(-1,50),rep(1,50)),2),
+  Subject=1:50
+)
+Class_data[,2]=as.factor(Class_data[,2])
+Class_data[,3]=as.factor(Class_data[,3])
+Class_data[,4]=as.factor(Class_data[,4])
+```
+
+# Let's see how the scores are distributed. Do you think linear regression would work here? Is it possible to group this just by looking at everything visually? Discuss!
+
+```{r visualization of language scores}
+plot(Class_data$Scores~1, data = Class_data)
+```
+
+# Let's evaluate while accounted for Random and Fixed Factors. Our random factor will be subject. Then we'll run an ANOVA statistical test. 
+
+```{r Random Factors}
+Class_results=lmer(Scores~Population1+Population2+Population1*Population2+(1|Subject),data=Class_data)
+Class_results
+anova(Class_results)
+```
+# Was this significant? How does this show the power of mixed modeling? Compare with the visual graph...
+
+# Also keep in mind that sometimes your model might be a singular fit, which means that your model overexplains all of the data. You will usually get a warning if this happens. Whenever using mixed modeling, just be aware if it makes sense for the data you have. Linear regression sometimes works just fine. 

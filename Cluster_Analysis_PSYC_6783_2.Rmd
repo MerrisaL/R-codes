@@ -1,0 +1,131 @@
+---
+title: "Cluster Analysis Example"
+author: "Andrea Hartman"
+date: "2/24/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This exercise will demonstrate how to run k-Means Cluster Analysis on a sample of text (teaching evaluations) in R. The datasets used in this exercise and some of the analysis suggestions come from Zhang, Z. (2018). Text Mining for Social and Behavioral Research Using R: A Case Study on Teaching Evaluation.
+
+```{r clear-workspace}
+
+# clear the workspace (useful if we're not knitting)
+rm(list=ls())
+set.seed(10)
+#pick the same space to start with. Preferably use this function at the starting of the code.
+
+```
+
+
+```{r function-check-for-packages, include=FALSE}
+
+# make sure we can load packages 
+# (thanks to https://gist.github.com/smithdanielle/9913897)
+load_or_install_packages <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) {
+    install.packages(new.pkg, 
+                     dependencies = TRUE,
+                     repos="http://cloud.r-project.org/")}
+  sapply(pkg, require, character.only = TRUE)
+}
+
+```
+
+
+```{r load-packages, message=FALSE, results="hide"}
+# specify which packages we'll need
+required_packages = c("tidyverse",
+                      "stringr",
+                      "dplyr",
+                      "tidytext",
+                      "tm", 
+                      "factoextra")
+
+# install them (if necessary) and load them
+load_or_install_packages(required_packages)
+```
+
+#Load the raw teaching evalutions data
+
+```{r load-data}
+prof1000 <- read.csv("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/prof1000.original.csv", stringsAsFactors = FALSE)
+str(prof1000)
+prof1000
+
+```
+
+# Drop evaluations with fewer than 50 characters
+
+```{r filter-data}
+prof1000 <- prof1000[nchar(prof1000$comments) > 50, ]
+dim(prof1000)
+```
+
+# Use tidytext to tokenize, drop stop words, and create a document term matrix
+
+```{r create-document-term-matrix}
+prof.tm <- unnest_tokens(prof1000, word, comments)
+stopwords <- read.csv("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/stopwords.evaluation.csv")
+prof.tm <- prof.tm %>% anti_join(stopwords)
+prof.dtm <- prof.tm %>% count(profid, word) %>% cast_dtm(profid, word, n)
+prof.dtm
+```
+
+# Drop terms that were not used for at least 75% of the professors
+
+```{r remove-sparse-terms}
+prof.subset <- removeSparseTerms(prof.dtm, 0.25)
+tm::inspect(prof.subset)
+```
+
+# Try k-means analysis with 2 clusters
+
+```{r 2-clusters}
+kmeans.data <- as.matrix(t(prof.subset))
+kfit <- kmeans(kmeans.data, 2)
+kfit
+```
+# Class discussion - are these clusters easy to interpret?
+
+# Try k-means analysis with 5 clusters
+
+```{r 5-clusters}
+kmeans.data <- as.matrix(t(prof.subset))
+kfit <- kmeans(kmeans.data, 5)
+kfit
+```
+# Class discussion - more clusters makes the interpretation difficult!
+
+# Determine optimal k using the "elbow method"
+
+```{r create-elbow-plot}
+k <- 8
+varpercent <- NULL
+for (i in 1:k) {
+  kfit <- kmeans(kmeans.data, i)
+  varpercent <- c(varpercent, kfit$betweenss/kfit$totss)
+}
+varpercent
+plot(1:k, varpercent, xlab = "k # of Clusters", ylab = "Explained Variance")
+```
+# Class discussion - where is the "elbow"?
+
+# Run with 3 clusters and examine groupings
+```{r 3-clusters}
+kfit <- kmeans(kmeans.data, 3)
+kfit$cluster
+```
+
+# Class discussion - any thoughts on how we might characterize teachers in these 3 clusters?
+
+# Validate with visualization
+
+```{r visualization}
+fviz_cluster(kfit, data = kmeans.data)
+```
+

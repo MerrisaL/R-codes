@@ -1,0 +1,546 @@
+---
+title: "The Almighty ggplot"
+author: "Gray Freeman Thomas"
+date: "3/10/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to ggplot 
+
+## Keep it clean! 
+
+```{r clear-workspace}
+
+# clear the work space (useful if we're not knitting)
+rm(list=ls())
+
+```
+
+# Packages, amirite? 
+
+```{r function-check-for-packages, include=FALSE}
+
+# make sure we can load packages 
+# (thanks to https://gist.github.com/smithdanielle/9913897)
+load_or_install_packages <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) {
+    install.packages(new.pkg, 
+                     dependencies = TRUE,
+                     repos="http://cloud.r-project.org/")}
+  sapply(pkg, require, character.only = TRUE)
+}
+
+```
+
+
+## Load 'em on up
+
+```{r load-packages, message=FALSE, results="hide"}
+
+# specify which packages we'll need
+required_packages = c("tidyverse",
+                     "ggplot2",
+                     "ggimage",     # Supports image files and graphic objects to be visualized in 'ggplot2' graphic system
+                     "png",         # Easy and simple way to read, write and display bitmap images stored in the PNG format
+                     "jpeg",        # Easy and simple way to read, write and display bitmap im-ages stored in the JPEG format
+                     "grid",
+                     "gridExtra")
+
+# install them (if necessary) and load them
+load_or_install_packages(required_packages)
+
+```
+
+
+# DATA
+All of the Michael Jordan data for are from <www.Basketball-Reference.com>
+
+Today, we will be looking at the greatest basketball player of all time, Michael Jordan. Michael Jordan won 6 championships, 5 MVPS, and 1 intergalactic battle for the safety of the Looney Tunes. His resumé is unassailable. I thought it would be interesting to split up the 5 MVP seasons and then 5 Non-MVP seasons to show how quickly we can learn things from visual representations of data. 
+
+Time to read in those files!
+
+```{r read in MVP data file}
+
+#MVP DATA FILE
+mvp<-read.delim(file = "/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/MJ_mvp.csv",header=TRUE,sep=",") #read in the file
+
+mvp$Conference<-as.factor(mvp$Conference) #ensures that a between subjects variable is a factor
+mvp$Venue<-as.factor(mvp$Venue) #ensures that a between subjects variable is a factor
+mvp$Season<-as.factor(mvp$Season) #ensures that a between subjects variable is a factor
+mvp$Opp<-as.factor((mvp$Opp)) #ensures that a between subjects variable is a factor
+
+head(mvp) 
+```
+
+```{r read in Non-MVP data file}
+
+#NON-MVP DATA FILE
+Nmvp<-read.delim(file = "/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/MJ_non.csv",header=TRUE,sep=",") #read in the file
+
+Nmvp$Conference<-as.factor(Nmvp$Conference) #ensures that a between subjects variable is a factor
+Nmvp$Venue<-as.factor(Nmvp$Venue) #ensures that a between subjects variable is a factor
+Nmvp$Season<-as.factor(Nmvp$Season) #ensures that a between subjects variable is a factor
+Nmvp$Opp<-as.factor((Nmvp$Opp)) #ensures that a between subjects variable is a factor
+
+head(Nmvp)
+```
+
+```{r read in combined data file}
+
+#Combined Data File
+
+MJ<-read.delim(file = "/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/MJ_10.csv",header=TRUE,sep=",") #read in the file
+
+MJ$Conference<-as.factor(MJ$Conference) #ensures that a between subjects variable is a factor
+MJ$Venue<-as.factor(MJ$Venue) #ensures that a between subjects variable is a factor
+MJ$Season<-as.factor(MJ$Season) #ensures that a between subjects variable is a factor
+MJ$Opp<-as.factor((MJ$Opp)) #ensures that a between subjects variable is a factor
+MJ$MVP<-as.factor((MJ$MVP)) #ensures that a between subjects variable is a factor
+MJ$Ring<-as.factor((MJ$Ring)) #ensures that a between subjects variable is a factor
+head(MJ)
+```
+
+
+# Plot vs ggplot
+
+The native R plot function will accomplish the goal of producing a visualization of your data, but they are basic, bland, and boring! It is not intuitive how to address each component of your graph. Let's compare the differences between a scatter plot using R's plot function compared to ggplot. 
+
+```{r basic plot}
+plot(x=MJ$Min,y=MJ$PTS) #basic scatterplot of points and the minutes played to reach that total using the native R plotting
+```
+
+```{r ggplot}
+ggplot(MJ, aes(x=Min, y=PTS)) #basic scatterplot without the data points
+```
+
+To add the data points, I need to add a layer using the geom_point funciton. I like using one line per layer so I can visualize the structure of the graph more easily. 
+
+``` {r plot with points} 
+ggplot(MJ, aes(x=Min, y=PTS)) + 
+  geom_point() +
+  xlab("Minutes Played") +
+  ylab("Points Scored")
+```
+
+
+## More detail, please!
+
+I mentioned wanting to look at the difference between MVP years and Non-MVP years, so let's look at how MJ scored throughout his career.I'll also add another layer so that I can have a smoothing method. Here I have chosen to plot a line of best fit by using the geom_smooth function. 
+
+```{r ggplot points and lm} 
+#basic scatter plot of points scored during each game 
+
+ggplot(MJ, aes(x=Game, y=PTS)) + 
+  geom_point(size = 1) +
+  xlab("Games from 1986-1998") +
+  ylab("Points Scored") +
+  geom_smooth(method="lm", color = "#CE1141")
+```
+
+It looks like MJ scored fewer points as his career went on during that 10 season stretch. However, this does not tell us much about differences between the MVP and Non-MVP years.
+
+```{r ggplot color variable} 
+#basic scatter plot of points scored during each game 
+
+ggplot(MJ, aes(x=Game, y=PTS, color = MVP)) + 
+  geom_point() +
+  xlab("Games from 1986-1998") +
+  ylab("Points Scored") + #adding a line of best fit as our smoothing method
+  scale_color_manual(values=c("#CE1141","#000000")) #this is how we can manually change the colors we use. I chose the team colors  of the Bulls to stick with the theme.
+```
+
+We can immediately see that 4/5 of his highest scoring games were during MVP years. This tell us about the individual success of MJ, but can we learn more about how that was reflected in team success? Let's look at the same chart but differentiate the shape of our points for years he won a championship vs years he did not. I also want to make it more cohesive thematically, so I am going to change the color of the font and adjust some background elements.
+
+```{r ggplot shape & color variable} 
+
+ggplot(MJ, aes(x=Game, y=PTS, color = MVP, shape = Ring)) + #basic scatter plot of points scored during each game 
+  geom_point() +
+  xlab("Games from 1986-1998") + #labels for axis
+  ylab("Points Scored") +
+  scale_color_manual(values=c("#CE1141","#000000")) + 
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 14, color = "#CE1141")) + #adjusts the  font
+  theme(axis.line = element_line(arrow = arrow())) + #adds the arrows along the axis
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+```
+
+It looks like all of the data after the 350 game mark turned into championship years for His Airness. Pretty impressive stuff!
+
+# EXERCISE 1: 
+## Change the shape of your points
+
+We don't have to settle for the mundane life of the same dots anymore. We have a choice, and it's time to exercise that freedom! You can play with the shape and size of the points below, as well as adjusting the color if you would like
+
+```{r element change exercise}
+ggplot(MJ, aes(x=Min, y=PTS)) + 
+  geom_point(shape = 25, color = "brown", size = 3) + 
+  theme(text = element_text(family = "mono", face = "bold", size = 12, color = "navy")) +
+  xlab("Minutes Played") + #labels for axis
+  ylab("Points Scored") +
+  geom_smooth(method="lm", color = "green") #In the geom_point function, choose a shape value between 1-25
+``` 
+
+
+# Customizing & Combining
+
+I want to look at how MJ played against each of his opponents, so I'm going to create some bar charts.  
+
+```{r bar chart stat total}
+ggplot(MJ, aes(x = Opp, y = PTS, fill = Opp)) + 
+  geom_bar(stat = "identity") + #total points vs opponent as indicated by the "identity" stat
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#000000")) +
+  xlab("Opponent") + #labels for axis
+  ylab("Total Points Scored") +
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#000000",
+    size = 4)) 
+``` 
+
+What sort of changes might we see switching from total points to average points?
+
+```{r bar chart stat mean}
+ggplot(MJ, aes(x = Opp, y = PTS, fill = Opp)) +
+  geom_bar(stat = "summary", fun = mean) + #average points vs opponent
+  theme(text = element_text(family = "serif", face = "bold", size = 12, color = "#CE1141")) +
+  xlab("Opponent") + #labels for axis
+  ylab("Average Points Scored") +
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+``` 
+
+### ggplot is like Burger King... Have it your way... and choose the colors *you* want
+
+We can get even more detailed and change the labels as well as have the colors represent variables.
+
+```{r label change}
+ggplot(MJ, aes(x = Opp, y = PTS, fill = Conference)) + #fill shows third variable; Conference
+  geom_bar(stat = "identity") + #total points vs opponent
+  xlab("Opponent") + #customize axis
+  ylab("Total Points Scored") + #customize axis
+  ggtitle("MJ's Average Points 1986-1998") + #add title
+  scale_fill_manual(values=c("#CE1141","#000000")) + 
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+``` 
+What jumps out immediately about this graph? Why might there be such a stark difference?
+
+This can get even more intricate with stacked bar charts.
+
+```{r stacked bar}
+ggplot(MJ, aes(x = Opp, y = PTS, fill = Season)) + #fill shows third variable; Season
+  geom_bar(stat = "identity") + #total points vs opponent
+  xlab("Opponent") + #customize axis
+  ylab("Total Points Scored") + #customize axis
+  ggtitle("MJ's Total Points 1986-1998") + #add title
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+``` 
+
+
+However, we want to look at MJ's MVP years compared to his non-MVP years without having to switch from graph to graph. Let's see how we can best do that. 
+
+## Grob a seat! 
+
+We'll start by creating a graphic object, or a *grob* for each graph that we would like to compare.
+
+```{r create bar chart graphic objects AKA grobs}
+
+mvp_pts <- ggplot(mvp, aes(x = Opp, y = PTS, fill = Conference)) + #create object out of the graph so it can be recalled and used
+  geom_bar(stat = "identity") + #total points vs opponent
+  xlab("Opponent") + #customize axis
+  ylab("Total Points Scored") + #customize axis
+  ggtitle("Total Pts. During MVP Years") +
+  scale_fill_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4)) 
+
+mvp_avg <- ggplot(mvp, aes(x = Opp, y = PTS, fill = Conference)) + #create object out of the graph so it can be recalled and used
+  geom_bar(stat = "summary", fun = mean) + #average points vs opponent 
+  xlab("Opponent") +
+  ylab("Average Points Scored") +
+  ggtitle ("Avg. Pts. During MVP Years") +
+  scale_fill_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+
+non_pts <- ggplot(Nmvp, aes(x = Opp, y = PTS, fill = Conference)) + #fill show another variable; Season
+  geom_bar(stat = "identity") + #total points vs opponent
+  xlab("Opponent") + #customize axis
+  ylab("Total Points Scored") + #customize axis
+  ggtitle("Total Pts. During Non-MVP Years") +
+  scale_fill_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+
+non_avg <- ggplot(Nmvp, aes(x = Opp, y = PTS, fill = Conference)) + 
+  geom_bar(stat = "summary", fun = mean) + #average points vs opponent 
+  xlab("Opponent") +
+  ylab("Average Points Scored") +
+  ggtitle ("Avg. Pts. During Non-MVP Years") +
+  scale_fill_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+``` 
+
+## Time to Combine
+
+Let's take a look at the average points graphs
+
+``` {r view object}
+mvp_avg
+```
+
+``` {r view other object}
+non_avg
+```
+
+It would be great if we could look at each of these on the same page so that we could more easily compare them. Thanks to Kassambara (https://rpkgs.datanovia.com/ggpubr/index.html), we can do just that.
+
+``` {r view arranged object}
+grid.arrange(mvp_pts, non_pts, mvp_avg, non_avg, ncol = 2, nrow = 2) 
+```
+
+```{r create scatter plot graphic objects AKA grobs}
+
+mvp_pts_gm <- ggplot(mvp, aes(x = Game, y = PTS, fill = Conference)) + #create object out of the graph so it can be recalled and used
+  geom_point() +
+  xlab("Game") + #customize axis
+  ylab("Total Points Scored") + #customize axis
+  ggtitle("Total Pts. During MVP Years") +
+  scale_color_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4)) 
+
+non_pts_gm <- ggplot(Nmvp, aes(x = Game, y = PTS, fill = Conference)) + #fill show another variable; Season
+  geom_point() +
+  xlab("Game") + #customize axis
+  ylab("Total Points Scored") + #customize axis
+  ggtitle("Total Pts. During Non-MVP Years") +
+  scale_color_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+  
+mvp_shots <- ggplot(mvp, aes(x = Game, y = FGA, fill = Conference)) + #fill show another variable; Season
+  geom_point() +
+  xlab("Game") + #customize axis
+  ylab("Field Goal Attempts") + #customize axis
+  ggtitle("FGA During Non-MVP Years") +
+  scale_color_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+  
+non_mvp_shots <- ggplot(Nmvp, aes(x = Game, y = FGA, fill = Conference)) + #fill show another variable; Season
+  geom_point() +
+  xlab("Game") + #customize axis
+  ylab("Field Goal Attempts") + #customize axis
+  ggtitle("FGA During Non-MVP Years") +
+  scale_color_manual(values=c("#CE1141","#000000")) +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141")) + #adjusts the  font
+  theme (plot.background = element_rect(
+    fill = "grey90",
+    colour = "#CE1141",
+    size = 4))
+``` 
+
+## Arrange Your Grobs! 
+
+``` {r view arranged scatter objects}
+grid.arrange(mvp_pts_gm, non_pts_gm, mvp_shots, non_mvp_shots, ncol = 2, nrow = 2) # note that the product of ncol & nrow must be > n or there will be an error
+```
+
+# Exercise 2: 
+## Grobs & Combining Graphs
+
+Could we do this with any arrangement of columns and rows? Play around with the number of each to see how that might change the output.
+
+``` {r view arranged object exercise bar chart}
+grid.arrange(mvp_pts, non_pts, mvp_avg, non_avg, ncol = 4, nrow = 1) 
+```
+
+``` {r view arranged object exercise scatter plot}
+grid.arrange(mvp_pts_gm, non_pts_gm, mvp_shots, non_mvp_shots, ncol = 1, nrow = 4) # note that the product of ncol & nrow must be > n or there will be an error
+```
+
+# The Fun Stuff: Custom Images!
+
+Let's create objects out of images that we can then use in our graphs to really make them fun and stand out.
+
+## More Grobs
+
+``` {r create graphic objects}
+logo <- png::readPNG("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/jordanlogo.png") #png package
+blogo <- png::readPNG("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/bull_toy.png")
+court <- png::readPNG("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/bullscourt.png")
+walk <- png::readPNG("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/mj_walk.png")
+flag <- jpeg::readJPEG("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/bullflag.jpeg")
+toon <- png::readPNG("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/mj_toon.png")
+```
+
+
+### Bar Chart Layering
+
+```{r custom bar}
+
+MJAvg<-ggplot(MJ, aes(x = Opp, y = PTS)) +
+  annotation_custom(rasterGrob(blogo)) +
+  geom_bar(stat = "summary", fun = mean) + #average points vs opponent
+  xlab("Opponent") +
+  ylab("Average Points Scored") +
+  ggtitle ("Michael Jordan's Average Points 1986-1998")
+MJAvg
+```
+
+```{r custom bar white}
+
+MJAvg<-ggplot(MJ, aes(x = Opp, y = PTS )) +
+  annotation_custom(rasterGrob(blogo)) +
+  geom_bar(stat = "summary", fun = mean, fill = "#CE1141", alpha = .2, color = "#CE1141") + #average points vs opponent
+  xlab("Opponent") +
+  ylab("Average Points Scored") +
+  ggtitle ("Michael Jordan's Average Points 1986-1998") +
+  theme(text = element_text(family = "Times New Roman", face = "bold", size = 12, color = "#CE1141"))
+MJAvg
+```
+
+
+### Next Level 
+I think we can make this cooler, and instead of using the same code, I'll just insert the Grob that I created earlier and add the elements I want to change.
+
+``` {r custom bar black}
+MJAvg <- MJAvg +
+  theme(
+    panel.background = element_rect(fill = "black"), # bg of the panel
+    plot.background = element_rect(fill = "black", color = "#CE1141", size = 2), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "black"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "black")) + # get rid of legend panel bg
+  theme(plot.title = element_text(face = "bold", color ="#CE1141", hjust = 0.5, size = 20))+
+  theme(axis.title.x = element_text(face = "bold",color = "white"))+
+  theme(axis.title.y = element_text(face = "bold",color = "white")) +
+  theme(axis.text.x = element_text(color = "white", size = 9)) +
+  theme(axis.text.y = element_text(color = "white")) + 
+  theme(text = element_text(family = "Georgia"))
+MJAvg
+```
+
+
+How fun was that? Guess what. It's your turn! I will run the scatter plot below as an example and then you all may change the images and any other aesthetics you'd like to. 
+
+# Custom Plot Points
+
+I wanted to have different images represent the points on the graph for when MJ scored under 16 points to have a clearer delineation, and the best way to do that is with the MJ Crying Meme! 
+
+
+``` {r custom scatter low}
+
+MJcry <-ggplot(MJ, aes(x = Min, y = PTS)) + 
+  geom_image(aes(image= ifelse(PTS < 16,"/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/cryingjordan.png", #if else statement to differentiate a threshold
+                               "/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/ggplot tutorial T4L/bull_toy.png")), size=.04) + #ggimage package; plot function and set the size of the images as well
+  labs(x="Minutes Played",y="Points Scored") +
+  geom_smooth(method = glm,color="black", fill = "yellow")
+MJcry 
+```
+
+### Jazz It Up
+We'll add a background image before showing some full customization and letting you all do your thing! 
+
+``` {r custom scatter low with image}
+
+MJcry <-ggplot(mvp, aes(x = Min, y = PTS)) + 
+  annotation_custom(rasterGrob(toon)) + #grid package, we're grabbing the cartoon MJ 
+  geom_image(aes(image= ifelse(PTS < 16,"cryingjordan.png", #if else statement to differentiate a threshold
+                               "bull_toy.png")), size=.04) + #ggimage package; plot function and set the size of the images as well
+  labs(x="Minutes Played",y="Points Scored") +
+  geom_smooth(method = glm,color="black", fill = "yellow")
+MJcry 
+```
+It's really easy to see how basic graphs can turn into a visual representation of data that tells a story.
+
+# Final Level
+
+Let us not forget how awesome MJ was though, so let's see how often he scored at least 5 points more than his average. And let's go ahead and make it even more appealing with a background image. He played in the United Center, so let's use the court object we created earlier.
+
+
+``` {r custom scatter fire}
+
+MJfire <-ggplot(mvp, aes(x = Min, y = PTS)) + 
+  annotation_custom(rasterGrob(court)) + #grid package, we're grabbing the court 
+  geom_image(aes(image= ifelse(PTS > 35,"fire.png", #if else statement to differentiate a threshold
+                               "mj_ball.png")), size=.04) + #ggimage package; plot function and set the size of the images as well
+  labs(x="Minutes Played",y="Points Scored") +
+  geom_smooth(method = glm,color="green", fill = "blue") +
+  theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "#dfbb85", color = "darkred"), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent")) +# get rid of legend panel bg
+    theme(text = element_text(family = "Times New Roman", size = 17.5, color = "darkred"))
+MJfire
+```
+
+Hopefully you get the idea of how fun these sort of things can be. 
+
+# Exercise 3: 
+## Go Crazy
+
+It's your turn now! In the folder for this week, there are multiple images to choose from. Feel free to change the points, the size of the points, the threshold, the background elements, the labels, or whatever suits you. I would be surprised if there were two similar graphs. 
+
+``` {r custom scatter exercise}
+
+MJ_you <-ggplot(mvp, aes(x = Min, y = PTS)) + 
+  annotation_custom(rasterGrob(court)) + #ADD A BACKGROUND IMAGE
+  geom_image(aes(image= ifelse(PTS < 16,"cryingjordan.png", # ADD IMAGE + ALTER THE THRESHOLD
+                               "cryingjordan.png")), size=.04) + # ADD IMAGE FOR PTS OVER 16 
+  labs(x="Minutes Played",y="Points Scored") +
+  geom_smooth(method = glm,color="red3") +
+  theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "#D2B48C", color = "red"), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent"))# get rid of legend panel bg
+MJ_you
+```

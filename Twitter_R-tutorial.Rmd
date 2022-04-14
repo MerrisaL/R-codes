@@ -1,0 +1,335 @@
+---
+title: "Twitter in R Tutorial"
+author: "Kaya LeGrand" 
+date: "March 24, 2022"
+output: pdf_document
+---
+
+# Intro
+
+This tutorial will guide you through the process of posting tweets and gathering data from Twitter within R, with a little trial analysis of (and discussion about analyzing) Twitter data!  
+
+# Set things up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r clear-workspace}
+
+# clear the workspace (useful if we're not knitting)
+rm(list=ls())
+
+```
+
+```{r function-check-for-packages, include=FALSE}
+
+# make sure we can load packages 
+# (thanks to https://gist.github.com/smithdanielle/9913897)
+load_or_install_packages <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) {
+    install.packages(new.pkg, 
+                     dependencies = TRUE,
+                     repos="http://cloud.r-project.org/")}
+  sapply(pkg, require, character.only = TRUE)
+}
+
+```
+
+```{r load-packages, message=FALSE, results="hide"}
+
+# specify which packages we'll need
+required_packages = c("tidytext",
+                      "tidyverse",
+                      "vader",
+                      "rtweet",
+                      "academictwitteR")
+
+# install them (if necessary) and load them
+load_or_install_packages(required_packages)
+
+```
+
+***
+
+# Getting access to the Twitter API
+
+To gather Twitter data, you need to request academic access to the Twitter API. This involves filling out an application with information about your research project, specifically how you'll analyze and share Twitter data. You can get more info and apply here: (https://developer.twitter.com/en/products/twitter-api/academic-research).
+
+Once your application has been approved, you create an "App," which (as far as I can tell) is just the thing that generates the credentials you'll need to access the Twitter API. Through the App, you'll receive an API Key and a Secret Key.
+
+# Prepping your API access info
+
+```{r}
+
+#create key and appname objects
+appname <- "SP22 PSYC6783"
+key <- "muHx7bg03VUxpp1XfHGLmhebJ"
+secret <- "WKliyLAMaCtQX23VQqEZ6M1WUkQtpzActVpXzqDL397DvlsXA3"
+
+```
+
+On the Twitter developer dashboard, you'll need to add your Twitter profile URL to the "Website URL" field, and you'll need to add the following to the "Callback URL" field: http://127.0.0.1:1410
+
+Once you've completed these steps, you can create a token through which to access the Twitter API. If the next chunk of code works, it should take you to a website in your browser where you can click a button to authorize the app.
+
+```{r}
+
+#create Twitter token using your App name, key, and secret key. Click "Authorize App" once it takes you to the browser page.
+twitter_token <- create_token(
+  app = appname,
+  consumer_key = key,
+  consumer_secret = secret)
+
+```
+
+You're in! Now we can get started.
+
+***
+
+# rtweet
+
+Let's start by using the package rtweet. (Documentation here is helpful: https://cran.r-project.org/web/packages/rtweet/rtweet.pdf, and here too: https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html.) The two functions in the rtweet package that are perhaps the most intuitive and useful are post_tweet and search_tweets.
+
+## Tweeting from R: post_tweet  
+
+Let's start by posting a tweet to my Twitter page (https://twitter.com/klegrand47).
+
+```{r}
+
+#tweet tweet
+post_tweet("Woohoo, I can tweet from R! #rstats")
+
+```
+
+*EXERCISE 1:* Tweet something else from R! Tip: if you use the #rstats hashtag, stats-related Twitter accounts will retweet it and follow you. I didn't like that... so don't use it if you don't want that to happen.
+
+```{r}
+
+#your tweet:
+post_tweet("your tweet here")
+
+```
+
+***
+
+Now let's look at how to pull tweets into R using various functions...
+
+## Streaming tweets
+
+By using the stream_tweets function, you can randomly sample from all tweets currently being posted in a given amount of time. The default is 30 seconds, but you can change that.
+
+```{r}
+
+#streaming all tweets for 30 seconds
+stream <- stream_tweets("")
+
+#streaming all tweets using keyword "spring" for 60 seconds
+stream_spring <- stream_tweets(q = "spring",
+                               timeout = 60)
+
+```
+
+## Searching for tweets: search_tweets
+
+To pull tweets, you can use the search_tweets function and specify what to search (q), how many tweets to return (n), and various other things. For now, let's just worry about q and n! The R Documentation says that this function only returns tweets "from the past 6-9 days," and the default maximum is 18,000 tweets. Let's start by searching for 500 tweets containing the #rstats hashtag.
+
+```{r}
+
+#pulling 500 tweets with the hashtag #rstats
+rstats <- search_tweets(q = "#rstats",
+                               n = 500)
+View(rstats)
+
+```
+
+In the q argument, you can include search terms that aren't hashtags. A space functions as "AND," and you can also insert "OR" between search terms. To search for exact phrases, you can put the double quoted search terms inside single quotes, like this: q = '"#rstats"'. You can also do this by putting backslashes between an initial pair of double quotes and before a final pair of double quotes, like this: q = "\"#rstats\"".
+
+For the n argument, the maximum number of tweets that can be returned is 18,000. (You can get around this by changing things in other arguments, though, so you can read the R documentation on the search_tweets function if you need more than 18,000 Tweets.)
+
+*EXERCISE 2:* Search for a hashtag or phrase that interests you, and specify whatever number of Tweets you'd like returned.
+
+```{r}
+
+#your search:
+
+
+```
+
+### Adjusting other parameters  
+
+You can adjust various things within the code to exclude certain types of tweets. For example, adding "-filter:retweets" to the q argument will exclude retweets from the data that's returned. You can also do this by adding the argument "include_rts" and setting it to "FALSE".
+
+NOTE: when adding things to the q argument, just put them right into the same set of quotes as your search term (as shown below). No commas, no new set of quotation marks.
+
+```{r}
+
+#excluding retweets by adjusting q argument
+rstats_noretweets <- search_tweets(q = "#rstats -filter:retweets",
+                               n = 500)
+head(rstats_noretweets)
+
+#excluding retweets by setting include_rts argument to FALSE
+rstats_noretweets2 <- search_tweets(q = "#rstats",
+                                    n = 500,
+                                    include_rts = FALSE)
+
+head(rstats_noretweets2)
+
+```
+
+You can also adjust the q argument to *include* various things. For example, adding "filter:media" to the q argument will only return tweets with media. Adding "filter:news" to the q argument will only return tweets with links to news articles.
+
+```{r}
+
+#only return tweets with links to news articles
+rstats_media <- search_tweets(q = "#rstats filter:media",
+                              n = 500)
+head(rstats_media)
+
+```
+
+One fun thing this function allows you to do is set a "geographical limiter." You input latitude and longitude coordinates plus a radius in miles, and it will search for tweets within that geographical area. You can get coordinates from Google Maps (either by dropping a pin and looking at the sidebar on the left, or just pulling them from the URL when you click on a location). I'm from Kansas, so let's search for tweets in a 10-radius around coordinates near my childhood home that include the word "cows". (That's what they have in Kansas, right?)
+
+```{r}
+
+#Overland Park, KS search
+KS_cows <- search_tweets(q = "cows",
+                        n = 500,
+                        geocode = "38.903835,-94.705270,10mi")
+head(KS_cows)
+
+```
+
+...perhaps unsurprisingly, there aren't a ton of results (maybe because there aren't many cows in suburbia). Let's see what happens if we increase the radius.
+
+```{r}
+
+#Overland Park, KS search
+KS_cows2 <- search_tweets(q = "cows",
+                        n = 500,
+                        geocode = "38.903835,-94.705270,100mi")
+head(KS_cows2)
+
+```
+
+Now we get a fair number of results! But we don't really care about people tweeting about cows.
+
+*EXERCISE 3:* Put in a geocode and search term you're interested in, and see what comes up!
+
+```{r}
+
+#your geocode search:
+
+
+```
+
+***
+
+# Trying some language analysis...
+
+Let's pretend we're interested in looking at how people talk about Patrick Mahomes (Chiefs quarterback) in Kansas City versus Buffalo now that the football season is over (right? I don't know things about football) and feelings have settled.
+
+```{r}
+
+#KC Mahomes (new geocode for Arrowhead Stadium, where the Chiefs play; exclude retweets and replies)
+KC_mahomes <- search_tweets(q = "mahomes -filter:retweets -filter:replies",
+                          n = 500,
+                          geocode = "39.0489432,-94.4861044,10mi")
+View(KC_mahomes)
+
+```
+
+```{r}
+
+#Buffalo Mahomes (geocode for Highmark Stadium, where the Bills play; exclude retweets and replies)
+buffalo_mahomes <- search_tweets(q = "mahomes -filter:retweets -filter:replies",
+                                 n = 500,
+                                 geocode = "42.7737546,-78.7869723,10mi")
+View(buffalo_mahomes)
+
+```
+
+Now, let's clean the data using functions from the tidyverse so we can analyze!
+
+```{r}
+
+#clean KC data
+KC_mahomes_clean <- KC_mahomes %>%
+  
+  #select only relevant columns
+  select(screen_name, status_url, text, lang, location) %>%
+  
+  #remove non-English tweets
+  filter(lang=='en')
+
+#check out clean KC data
+head(KC_mahomes_clean)
+
+#clean Buffalo data
+buffalo_mahomes_clean <- buffalo_mahomes %>%
+  
+  #select only relevant columns
+  select(screen_name, status_url, text, lang, location)
+
+#check out clean Buffalo data
+head(buffalo_mahomes_clean)
+
+```
+
+Let's just take a quick look at the sentiment about Mahomes in tweets from KC versus Buffalo.
+
+```{r}
+
+#sentiment analysis of Mahomes tweets in KC
+vader_df(KC_mahomes_clean$text)
+
+#sentiment analysis of Mahomes tweets in Buffalo
+vader_df(buffalo_mahomes_clean$text)
+
+```
+
+*TWITTER+SENTIMENT ANALYSIS DISCUSSION:* What do you notice about the sentiment analysis here? Does this seem like a useful way to analyze these data? Why/why not? If not, what could we do to make it more useful?
+
+***
+
+# academictwitteR: a little more flexible than rtweet?
+
+(Useful documentation for academictwitteR: https://cran.r-project.org/web/packages/academictwitteR/vignettes/academictwitteR-intro.html)
+
+As I learned about rtweet, I thought "surely there's a way to search for tweets from a specific user." As far as I can tell, there is not. BUT, the academictwitteR package has a function that allows you to do this. Let's try it out with my friend, Taylor, whose Twitter handle is @TayKayPhillips (I got her permission, don't worry). To do this, you need the person's user ID, and you can use this sneaky-looking website to convert a handle to a user ID: https://tweeterid.com/. The user ID is then entered into the function as the first argument. The other arguments are start date, end date, n (number of tweets to return), and your bearer token, which is one of those codes that Twitter gave you when you set up your API access.
+
+```{r}
+
+#Taylor's tweets from 1/1/22 to 3/11/22
+TKP <- get_user_timeline("977431957",
+                  start_tweets = "2021-01-01T00:00:00Z", 
+                  end_tweets = "2022-03-23T00:00:00Z",
+                  bearer_token = "yourbearertokenhere",
+                  n = 200)
+
+View(TKP)
+
+```
+
+Note that this function does NOT let you adjust whether or not retweets are included, but each retweet has "RT" at the beginning, so you could use another package to remove all tweets that begin with "RT."
+
+academictwitteR also allows you to set a start and end date/time for the tweets you want returned. So, if we go back to the Mahomes in KC vs. Buffalo example, it might be more fruitful to search for tweets on the day of the crazy Chiefs/Bills playoff game (January 23, 2022). But, as far as I can tell, you can't set a geocode for this function. =( So, let's just get some tweets about Mahomes on the day of that game, regardless of location.
+
+The game started at 5:30pm (17:30) CT. The default time zone in R is UTC, which is five hours ahead of central time, meaning the game started at 22:30 UTC. If we want to restrict the time window we're pulling tweets from to be during the game, it will need to be after 22:30. Let's try a five-minute window starting at 23:54.
+
+```{r}
+
+#tweets with "Mahomes" between 6:54 and 6:59pm CT on January 23, 2022 (during Chiefs vs. Bills playoff game)
+Mahomes_1.23.22 <- get_all_tweets(query = "Mahomes",
+                                  start_tweets = "2022-01-23T23:54:00Z",
+                                  end_tweets = "2022-01-23T23:59:00Z",
+                                   bearer_token = "yourbearertokenhere",
+                                  n = 1000)
+
+```
+
+***
+
+*GENERAL DISCUSSION:* What do you think is useful about analyzing tweets on their own? What limitations can you think of?

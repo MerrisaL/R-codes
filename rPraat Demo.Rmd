@@ -1,0 +1,200 @@
+---
+title: "rPraat Demo"
+author: "Naomi Sellers"
+date: "3/15/2022"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+#Take-away links for Praat and rPraat
+##Praat
+If you are interested in downloading Praat, you can do so for free from this link: https://www.fon.hum.uva.nl/praat/
+
+##rPraat
+You can find the full documentation for the rPraat library here: https://cran.r-project.org/web/packages/rPraat/rPraat.pdf
+The authors have a general tutorial of rPraat functions here: https://fu.ff.cuni.cz/praat/rDemo.html
+rPraat and mPraat homepage: https://fu.ff.cuni.cz/praat/
+
+*rPraat citation*:
+Bořil, T., & Skarnitzl, R. (2016). Tools rPraat and mPraat. In P. Sojka, A. Horák, I. Kopeček, & K. Pala (Eds.), Text, Speech, and Dialogue (pp. 367–374). Springer International Publishing.
+
+**********
+
+
+
+#Setting-up
+Before we start, make sure you have three files downloaded and in your R path in order to use this script as-is:
+  "sample2.wav"
+  "sample2.TextGrid"
+  "sample2.Formant"
+
+As we have been doing, we will start by clearing out our workspace (Global Environment), then we will load all necessary packages, installing whichever ones we don't have yet. 
+```{r clear-workspace}
+
+rm(list=ls())
+
+```
+
+##Load
+```{r function-check-for-packages, include=FALSE}
+
+# Loading and/or installing packages
+# (thanks to https://gist.github.com/smithdanielle/9913897)
+load_or_install_packages <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)){ 
+      install.packages(new.pkg, 
+                       dependencies = TRUE,
+                       repos="http://cloud.r-project.org/")}
+    sapply(pkg, require, character.only = TRUE)
+}
+
+required_packages = c("rPraat",
+                      "dplyr",
+                      "tuneR")
+
+# install packages (if necessary) and load them
+load_or_install_packages(required_packages)
+
+```
+
+**********
+
+
+
+
+**Let's Get Started!**
+#Looking at sound waves
+
+Let's start by loading in a sound file and plotting it. rPraat's functions are named in a systematic way, where the first part of the name tends to be whatever data type you are working with, followed by a dot plus whatever function you are wanting to run. So for this load function, we are loading in a sound file (shortened to "snd") and we're reading it in (hence ".read") and then plotting it (hence ".plot").
+```{r}
+library(tuneR)
+sample2wav <- snd.read("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/sample2.wav")
+
+snd.plot(sample2wav) 
+
+```
+rPraat's plotting function is super cool! It lets you zoom in and out in time so you can more closely examine a specific time range or easily see the larger picture of the soundwave. The sound file called "sample2.wav" is a recording I took of myself saying "Here's another sound sample." Try zooming in an out. Where do you think the word-boundaries lie? Where does the word "another" ends and "sound" starts? (Make note of the time where you think the boundary is).
+
+
+
+
+#Looking at text grids
+
+rPraat also lets you easily load in a TextGrid file, which in this case are the annotations I made of sample2 in Praat. Load in the TextGrid file, and let's see if you guessed the word boundaries correctly.
+```{r}
+
+s2TextG <- tg.read("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/sample2.TextGrid")
+
+tg.plot(s2TextG, group="my_group1")
+
+```
+
+We can see here the different labels I put onto the sound wave. 
+
+A terminology note: a "pointTier" refers to markers that *point* to a specific time. There are two pointTiers in this file: wordOnset and voicingChange (the start and stop of a vowel, more specifically). An "intervalTier" refers to markers that span an interval and are useful for labeling a section of the soundwave. I made three intervalTiers: Speaker, Word, and vowel. Just like the soundwave plot, you can zoom in and out of time to adjust your view of the textGrid. At the top right corner, you can see the tier labels and which level they are at (from lowest to highest, correlating to location on the y-axis). 
+
+If you zoom into the time you guessed the word boundary between "another" and "sound," does the Word interval tier start at that time?
+
+*Another quick note: you can look at the way R structures the text grid file by clicking on it in your Global Environment. Here, we can see that the textGrid is stored as a list variable. 
+
+
+##Subsetting TextGrid: Excluding tiers
+There are a number of levels in the textGrid, so let's say you want to only look at two or three. You can do this by removing tiers using the tg.removeTier("") function while you load the textGrid file into your workspace. For example, to remove the Speaker tier, you could pipe from the tg.read() command to the command tg.removeTier("Speaker"). You can also chain the commands to remove as many tiers you want together using the pipe command (%>%).
+```{r}
+
+s2_subTG <- tg.read("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/sample2.TextGrid")%>% tg.removeTier("Speaker")
+#This is the textGrid with the Speaker tier removed.
+
+#Try removing one or two more tiers in addition, and plot the subsetted textGrid.
+
+tg.plot(s2_subTG)
+```
+
+
+
+
+#Plotting other Praat objects: Formants
+
+In addition to the soundwave and the textGrid (the two main data types in Praat), you can make similar plots of the various acoustic features of the sound wave, such as formants. Before I explan what formants are, let's plot so you have a visual point of reference:
+```{r}
+
+s2formant<- formant.read("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/sample2.Formant")
+
+formant.plot(s2formant, group = "my_group1")
+
+```
+
+Formants are frequency bands (ranges of frequencies) of a open voiced sound with a lot of energy. These bands are easily seen in a spectrogram as they are represented as dark, thick horizontal lines stacked on top of each other, as I showed in my slides earlier. Here in rPraat, though, the formants are represented as colorful horizontal clusters of dots. The formant labels F1, F2, F3, etc. represent the order of the bands of high spectral energy vertically, from lowest frequencies to the highest. The frequency of each formant is actually a primary distinguishing feature of a vowel. A quick visualization note is that formants are technically only a feature of voiced sounds as they are the product of the open vocal tract. This means that even though there are points plotted across the whole time window, only the clear horizontal band of lines represent formants. For example, zoom in to the time window of 0.60 seconds to 1.20 seconds. You will see a very clear, consistent trend of lines for around t = 0.75 to 0.95 seconds, bookended by jaggidy points. You can see that the first formant is at around 500 Hz, the second is at around 2000 Hz, the third is at around 2250 to 2500 Hz, and the fourth is at around 4000 Hz. 
+
+*Exercise Question*: How do these formants compare to the formants at time = 0.145 to 1.65 seconds?
+
+
+
+
+#Combining Praat objects in one plot
+
+While the formants plots have pretty colors, unless you are trained to recognize speech sounds out of the formant data, it can be hard to figure out how these map onto the language aspect of the speech sound. rPraat actually lets us combine textGrids with other data objects like formant objects. You can do this calling the tg.plot() command, and telling R to use the formant variable for the formant argument. For example: 
+```{r}
+
+s2TG_vowelWord <- tg.read("/Users/merrisa/Dropbox/UConn/2021:22 Spring/PSYC6783 Tools to Analyze Language/R codes/sample2.TextGrid")%>% 
+                                tg.removeTier("Speaker")%>% 
+                                tg.removeTier("wordOnset")%>% 
+                                tg.removeTier("voicingChange")
+
+tg.plot(s2TG_vowelWord, formant = s2formant)
+
+```
+
+*Exercise Questions*:
+1. What do you notice when comparing the formant frequencies for the vowel /e/ from the word "Here's" to the /o/ from "another"? How do they look similar, and how do they look different?
+
+2. Are there noticable differences between the /a/ from "another" versus the /a/ from "sample"? 
+
+
+
+
+#Conclusion:
+rPraat has many, many other features and functions, as I have mentioned in my slides. If you are interested in more speech acoustics analyses, definitely check out rPraat's tutorial and documentation!
+
+
+**********
+
+#Bonus exercise!
+One last rPraat feature that I think is a bit of extra fun is that it lets you make your own sound object. It's a bit more math-y, but if you're interested in seeing how sound waves are formed, have a go!
+
+A sound wave is composed of a frequency rate (which is the number of cycles--think of one peak and one valley--the wave makes per second), the duration of the sound, and the amplitude--or the height--of the wave. When representing sound waves, you also have to consider sampling frequency (also called sampling rate); since sound waves are a continous signal, we have to take a certain number of samples from that signal over time in order to have specific values to plot. Below is the starting point for plotting your own sine wave, along with some suggestions for changes to make to parameters. Try different values for the parameters below and see how your sound object changes. You can even save it as a .wav file and hear what you made! 
+
+*Some things to try*
+Changing the sf parameter
+  - Try making sf really small or really large. What happens?
+  - Try maing sf equal 1.5 times the value of f. What happens?
+  - What happens if you make sf the same as f? 
+  - Given the other preset parameters, what seems to be the minimal sf value to make a smooth, clear sine-wave plot?
+  
+Changing f
+  - What happens if you double the value of f? What about triple?
+  - What happens if you halve the value of f? 
+  - What if the value of f is four times the value set for the duration? Five times?
+    How does the main plot look different, and how the smaller, bottom, overview plot look?
+
+```{r}
+
+sf <- 1000   # Sample frequency (Hz)
+
+duration_s <- 5 # sec The duration of the sample (in seconds)
+f <- 2     # Hz Frequency of wave (cycles-per-second)
+tRange <- seq(0, duration_s*sf-1)/sf  #Time range for the data (vectorized)
+sig <- 1*sin(2*pi*f*tRange) #making the sound wave from a sine wave (the y-values)
+
+snd <- list(sig = sig, fs = sf)
+snd.plot(snd)
+
+snd$nBits = 16
+snd.write(snd, "myOwnSine.wav")
+
+```
+
+Some hints:
+sf = Sample frequency (measured in Hz), aka the number of data points you will plot per second. The sampling frequency affects the resolution/smoothness of the soundwave. If you make sf really small, your plot will look very weird. The reason for this is because your sampling frequency needs to be above what is called the "Nyquist frequency," which numerically is two times the frequency of the wave. If the number of datapoints-per-second is lower than the Nyquist frequency, you won't have enough data points to accurately represent the shape of the wave, and it might even wind up looking like half the frequency that it actually is (this effect is called "aliasing"). 

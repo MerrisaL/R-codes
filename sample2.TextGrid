@@ -1,0 +1,153 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 2.7820408163265307 
+tiers? <exists> 
+size = 5 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "Speaker" 
+        xmin = 0 
+        xmax = 2.7820408163265307 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.7502244398982086 
+            text = "" 
+        intervals [2]:
+            xmin = 0.7502244398982086 
+            xmax = 2.221504598674913 
+            text = "Speaker1" 
+        intervals [3]:
+            xmin = 2.221504598674913 
+            xmax = 2.7820408163265307 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "Word" 
+        xmin = 0 
+        xmax = 2.7820408163265307 
+        intervals: size = 6 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.7525253230876703 
+            text = "" 
+        intervals [2]:
+            xmin = 0.7525253230876703 
+            xmax = 1.0309321890125243 
+            text = "Here's" 
+        intervals [3]:
+            xmin = 1.0309321890125243 
+            xmax = 1.3507549523476872 
+            text = "another" 
+        intervals [4]:
+            xmin = 1.3507549523476872 
+            xmax = 1.7234980290404671 
+            text = "sound" 
+        intervals [5]:
+            xmin = 1.7234980290404671 
+            xmax = 2.218187914774712 
+            text = "sample." 
+        intervals [6]:
+            xmin = 2.218187914774712 
+            xmax = 2.7820408163265307 
+            text = "" 
+    item [3]:
+        class = "TextTier" 
+        name = "wordOnset" 
+        xmin = 0 
+        xmax = 2.7820408163265307 
+        points: size = 4 
+        points [1]:
+            number = 0.7502244398982086 
+            mark = "" 
+        points [2]:
+            number = 1.0309321890125243 
+            mark = "" 
+        points [3]:
+            number = 1.3507549523476872 
+            mark = "" 
+        points [4]:
+            number = 1.7257989122299286 
+            mark = "" 
+    item [4]:
+        class = "TextTier" 
+        name = "voicingChange" 
+        xmin = 0 
+        xmax = 2.7820408163265307 
+        points: size = 9 
+        points [1]:
+            number = 0.7847376877401327 
+            mark = "" 
+        points [2]:
+            number = 0.9365959782445985 
+            mark = "" 
+        points [3]:
+            number = 1.033233072201986 
+            mark = "" 
+        points [4]:
+            number = 1.1114631006436804 
+            mark = "" 
+        points [5]:
+            number = 1.201197545032683 
+            mark = "" 
+        points [6]:
+            number = 1.461197345441844 
+            mark = "" 
+        points [7]:
+            number = 1.6153565191357717 
+            mark = "" 
+        points [8]:
+            number = 1.822436006187316 
+            mark = "" 
+        points [9]:
+            number = 1.9167722169552417 
+            mark = "" 
+    item [5]:
+        class = "IntervalTier" 
+        name = "vowel" 
+        xmin = 0 
+        xmax = 2.7820408163265307 
+        intervals: size = 10 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.7847376877401327 
+            text = "" 
+        intervals [2]:
+            xmin = 0.7847376877401327 
+            xmax = 0.9365959782445985 
+            text = "e" 
+        intervals [3]:
+            xmin = 0.9365959782445985 
+            xmax = 1.033233072201986 
+            text = "" 
+        intervals [4]:
+            xmin = 1.033233072201986 
+            xmax = 1.1114631006436804 
+            text = "a" 
+        intervals [5]:
+            xmin = 1.1114631006436804 
+            xmax = 1.201197545032683 
+            text = "o" 
+        intervals [6]:
+            xmin = 1.201197545032683 
+            xmax = 1.461197345441844 
+            text = "" 
+        intervals [7]:
+            xmin = 1.461197345441844 
+            xmax = 1.6153565191357717 
+            text = "ou" 
+        intervals [8]:
+            xmin = 1.6153565191357717 
+            xmax = 1.822436006187316 
+            text = "" 
+        intervals [9]:
+            xmin = 1.822436006187316 
+            xmax = 1.9167722169552417 
+            text = "a" 
+        intervals [10]:
+            xmin = 1.9167722169552417 
+            xmax = 2.7820408163265307 
+            text = "" 
