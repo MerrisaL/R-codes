@@ -114,7 +114,7 @@ Git will not automatically track changes, so you have to tell it when you made c
 Exercise: type in anything in the space below, perhaps how you're feeling right now, or what plans you have for this weekend 
 
 
->>>> write text here
+>>>> write text here NEW
 
 
 Once you're done writing, make sure you save the file. You'll see it show up in the Git tab, then you can click on Commit and see what happens!
@@ -142,6 +142,7 @@ create_github_token()  # this will navigate to GitHub in your browser
 # this function is from the library (gitcreds), enter PAT as password in the console after running command
 
 gitcreds_set()
+#Token: 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
 
 ```
 
